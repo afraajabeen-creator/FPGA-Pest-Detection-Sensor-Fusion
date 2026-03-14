@@ -54,3 +54,16 @@ end
 fclose(fid);
 
 disp('leaf.mem file generated successfully!');
+% ----- Pest decision logic -----
+
+BW = edge(img,'sobel');     % sobel edge map
+
+edge_count = sum(BW(:));    % total edge pixels
+
+disp(['Edge Count = ', num2str(edge_count)])
+
+if edge_count > 500
+    disp('Pest Detected')
+else
+    disp('Healthy Leaf')
+end
