@@ -1,0 +1,70 @@
+`timescale 1ns/1ps
+
+module tb_compare();
+
+reg clk;
+reg rst;
+reg [7:0] pixel_in;
+reg pixel_valid;
+reg humidity_high;
+reg spectral_high;
+reg temp_high;
+wire pest_detected;
+
+reg [7:0] healthy_mem [0:4095];
+reg [7:0] pest_mem [0:4095];
+
+integer i;
+
+// DUT
+hacktronics dut (
+    .clk(clk),
+    .rst(rst),
+    .pixel_in(pixel_in),
+    .pixel_valid(pixel_valid),
+    .humidity_high(humidity_high),
+    .spectral_high(spectral_high),
+    .temp_high(temp_high),
+    .pest_detected(pest_detected)
+);
+
+always #5 clk = ~clk;
+
+initial begin
+    clk = 0;
+    rst = 1;
+    pixel_valid = 0;
+    humidity_high = 1;
+    spectral_high = 1;
+    temp_high = 1;
+
+    $readmemb("healthy.mem", healthy_mem);
+    $readmemb("pest.mem", pest_mem);
+
+    #20 rst = 0;
+    pixel_valid = 1;
+
+    $display("---- Testing Healthy Leaf ----");
+    for (i = 0; i < 4096; i = i + 1) begin
+        pixel_in = healthy_mem[i];
+        #10;
+    end
+
+    #50;
+    $display("Healthy Result = %d", pest_detected);
+
+    rst = 1; #20; rst = 0;
+
+    $display("---- Testing Pest Leaf ----");
+    for (i = 0; i < 4096; i = i + 1) begin
+        pixel_in = pest_mem[i];
+        #10;
+    end
+
+    #50;
+    $display("Pest Result = %d", pest_detected);
+
+    $stop;
+end
+
+endmodule

@@ -1,0 +1,56 @@
+`timescale 1ns / 1ps
+
+module hacktronics (
+    input  wire        clk,
+    input  wire        rst,
+    input  wire [7:0]  pixel_in,
+    input  wire        pixel_valid,
+    input  wire        humidity_high,
+    input  wire        spectral_high,
+    input  wire        temp_high,
+    output reg         pest_detected
+);
+
+wire [7:0] edge_out;
+
+reg [15:0] edge_count;     // count edges
+reg [15:0] pixel_count;    // count pixels
+
+// Sobel Instance
+sobel_simple sobel_inst (
+    .clk(clk),
+    .rst(rst),
+    .pixel_in(pixel_in),
+    .pixel_valid(pixel_valid),
+    .edge_out(edge_out)
+);
+
+always @(posedge clk) begin
+    if (rst) begin
+        edge_count    <= 0;
+        pixel_count   <= 0;
+        pest_detected <= 0;
+    end
+    else if (pixel_valid) begin
+        
+        pixel_count <= pixel_count + 1;
+
+        // Count strong edges
+        if (edge_out > 8'd100)
+            edge_count <= edge_count + 1;
+
+        // After full image (4096 pixels)
+        if (pixel_count == 4096) begin
+            
+            if (edge_count > 500 && humidity_high && spectral_high && temp_high)
+                pest_detected <= 1;
+            else
+                pest_detected <= 0;
+
+            pixel_count <= 0;
+            edge_count  <= 0;
+        end
+    end
+end
+
+endmodule
